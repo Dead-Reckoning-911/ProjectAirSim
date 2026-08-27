@@ -1,5 +1,11 @@
 # Welcome to Project AirSim
 
+> **Dead Reckoning fork.** Use branch **`mac-ue57-host`** (org default). Mac/UE 5.7 host
+> patches for the Airdrone intercept demo live here, not on upstream `main`.
+> See [`DEAD_RECKONING.md`](DEAD_RECKONING.md).
+>
+> Upstream: [iamaisim/ProjectAirSim](https://github.com/iamaisim/ProjectAirSim) (Windows 11 / Ubuntu 22).
+
 [![Build and Deploy Sphinx Docs](https://github.com/iamaisim/ProjectAirSim/actions/workflows/sphinx-docs.yml/badge.svg)](https://github.com/iamaisim/ProjectAirSim/actions/workflows/sphinx-docs.yml) [![Linux SimLibs Debug Tests](https://github.com/iamaisim/ProjectAirSim/actions/workflows/test_linux_simlibs_debug.yml/badge.svg)](https://github.com/iamaisim/ProjectAirSim/actions/workflows/test_linux_simlibs_debug.yml) [![ProjectAirSim CI (Self-Hosted)](https://github.com/iamaisim/ProjectAirSim/actions/workflows/test_on_self_hosted.yml/badge.svg)](https://github.com/iamaisim/ProjectAirSim/actions/workflows/test_on_self_hosted.yml) [![Windows Build and Tests](https://github.com/iamaisim/ProjectAirSim/actions/workflows/test_windows.yml/badge.svg)](https://github.com/iamaisim/ProjectAirSim/actions/workflows/test_windows.yml)
 
 Project AirSim is a simulation platform for drones, robots, and other autonomous systems.
