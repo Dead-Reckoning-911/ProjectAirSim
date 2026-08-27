@@ -69,7 +69,7 @@ class ProjectAirSimClient:
             self.socket_services.dial(
                 f"tcp://{self.address}:{self.port_services}".encode(), block=True
             )
-        if "linux" in platform:
+        else:
             self.socket_topics.dial(
                 address=f"tcp://{self.address}:{self.port_topics}", block=True
             )

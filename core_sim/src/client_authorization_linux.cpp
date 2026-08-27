@@ -3,7 +3,7 @@
 
 // MIT License. All rights reserved.
 
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__)
 
 // Use OpenSSL v1.1.0 compatibility mode until this implementation is updated
 // for OpenSSL v3 APIs.
@@ -11,7 +11,12 @@
 
 #include <arpa/inet.h>
 #include <assert.h>
+#ifdef __APPLE__
+#include <libkern/OSByteOrder.h>
+#define bswap_64(x) OSSwapInt64(x)
+#else
 #include <byteswap.h>
+#endif
 #include <openssl/bio.h>
 #include <openssl/bn.h>
 #include <openssl/engine.h>

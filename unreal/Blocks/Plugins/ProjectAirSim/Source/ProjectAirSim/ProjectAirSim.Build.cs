@@ -200,6 +200,41 @@ public class ProjectAirSim : ModuleRules
             // JSBSim dll
             RuntimeDependencies.Add("$(BinaryOutputDir)/" + "JSBSim.dll", PluginDirectory + "/SimLibs/core_sim/jsbsim/lib/" + buildType + "/" + "JSBSim.dll");
         }
+        else if (Target.Platform == UnrealTargetPlatform.Mac)
+        {
+            List<string> liststrLibraries = new List<string> {
+                    PluginDirectory + "/SimLibs/core_sim/" + buildType + "/libcore_sim.a",
+                    PluginDirectory + "/SimLibs/simserver/" + buildType + "/libsimserver.a",
+                    PluginDirectory + "/SimLibs/physics/" + buildType + "/libphysics.a",
+                    PluginDirectory + "/SimLibs/core_sim/jsbsim/lib/" + buildType + "/libJSBSim.dylib",
+                    PluginDirectory + "/SimLibs/multirotor_api/" + buildType + "/libmultirotor_api.a",
+                    PluginDirectory + "/SimLibs/rover_api/" + buildType + "/librover_api.a",
+                    PluginDirectory + "/SimLibs/rendering_scene/" + buildType + "/librendering_scene.a",
+                    PluginDirectory + "/SimLibs/mavlinkcom/" + buildType + "/libmavlinkcom.a",
+                    PluginDirectory + "/SimLibs/nng/" + buildType + "/libnng.a",
+                    PluginDirectory + "/SimLibs/assimp/" + buildType + "/libassimp.a",
+                    PluginDirectory + "/SimLibs/openssl/" + buildType + "/libcrypto.a",
+                    PluginDirectory + "/SimLibs/openssl/" + buildType + "/libssl.a",
+                    PluginDirectory + "/SimLibs/shared_libs/libonnxruntime.dylib",
+                };
+
+            if (buildType == "Debug")
+                liststrLibraries.Add(PluginDirectory + "/SimLibs/lvmon/" + buildType + "/liblvmon.a");
+
+            var macShared = Directory.GetFiles(PluginDirectory + "/SimLibs/shared_libs");
+            foreach (var file in macShared)
+            {
+                var fileName = Path.GetFileName(file);
+                if (fileName.Contains("onnx") || fileName.StartsWith("libz"))
+                {
+                    RuntimeDependencies.Add("$(BinaryOutputDir)/" + fileName, PluginDirectory + "/SimLibs/shared_libs/" + fileName);
+                }
+            }
+            RuntimeDependencies.Add("$(BinaryOutputDir)/libJSBSim.dylib", PluginDirectory + "/SimLibs/core_sim/jsbsim/lib/" + buildType + "/libJSBSim.dylib");
+
+            PublicAdditionalLibraries.AddRange(liststrLibraries);
+            PublicSystemLibraries.AddRange(new string[] { "c++", "z" });
+        }
         else
         {
             List<string> liststrLibraries = new List<string> {

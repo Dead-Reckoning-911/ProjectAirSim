@@ -339,11 +339,11 @@
       "capture-settings": [
         {
           "image-type": 0,  // scene camera
-          "width": 400,
-          "height": 225,
+          "width": 640,
+          "height": 360,
           "fov-degrees": 90,
           "capture-enabled": true,
-          "streaming-enabled": false,
+          "streaming-enabled": true,
           "pixels-as-float": false,
           "compress": false,
           "target-gamma": 2.5

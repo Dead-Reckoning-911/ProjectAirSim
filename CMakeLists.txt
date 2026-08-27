@@ -34,7 +34,7 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")  # Have to match UE (uses /MD
 include(FetchContent)
 include(ExternalProject)
 
-if (UNIX)
+if (UNIX AND NOT APPLE)
     if(DEFINED ENV{UE_ROOT} AND NOT "$ENV{UE_ROOT}" STREQUAL "")
         # Build/link against UE's packaged Linux toolchain instead of system-installed toolchain
         # Note: This must be set BEFORE `project()` is called
@@ -47,6 +47,8 @@ if (UNIX)
         set(CMAKE_C_COMPILER clang-13)
         set(CMAKE_CXX_COMPILER clang++-13)
     endif()
+elseif(APPLE)
+    message("Building/linking against Apple Clang")
 endif()
 
 # Set up project
@@ -126,9 +128,12 @@ elseif(UNIX)
     add_compile_definitions(__CLANG__)
     add_compile_options(-ferror-limit=10
         $<$<COMPILE_LANGUAGE:CXX>:-stdlib=libc++>)
-    # Note: Linking -lanl (for getaddrinfo) and -pthread are required because of nng
     add_link_options($<$<LINK_LANGUAGE:CXX>:-stdlib=libc++> $<$<LINK_LANGUAGE:CXX>:-lc++abi>)
-    add_link_options(-lanl -pthread)
+    add_link_options(-pthread)
+    # libanl (getaddrinfo) is Linux-only
+    if(NOT APPLE)
+        add_link_options(-lanl)
+    endif()
 
     # set(CESIUM_CXX_FLAGS "-std=c++17 -stdlib=libc++")
     # set(CESIUM_LINKER_FLAGS "-stdlib=libc++ -lc++abi")
@@ -237,7 +242,11 @@ else()
         set(JSBSIM_LINKER_FLAGS "-stdlib=libc++ -lc++abi")
         set(JSBSIM_STANDARD_LIBRARIES "")
     endif()
-    set(JSBSIM_SHARED_LIB ${JSBSIM_LIB_DIR}/libJSBSim.so)
+    if(APPLE)
+        set(JSBSIM_SHARED_LIB ${JSBSIM_LIB_DIR}/libJSBSim.dylib)
+    else()
+        set(JSBSIM_SHARED_LIB ${JSBSIM_LIB_DIR}/libJSBSim.so)
+    endif()
     set(JSBSIM_IMPORT_LIB "")
     set(JSBSIM_BYPRODUCTS ${JSBSIM_SHARED_LIB})
 endif()
@@ -259,6 +268,7 @@ set(JSBSIM_CMAKE_ARGS
     -DCMAKE_PLATFORM_NO_VERSIONED_SONAME=TRUE
     # Fix RPATH issue with Ninja generator
     -DCMAKE_BUILD_WITH_INSTALL_RPATH=TRUE
+    -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 )
 if(UNIX AND PROJECTAIRSIM_USE_UE_TOOLCHAIN)
     list(APPEND JSBSIM_CMAKE_ARGS
@@ -272,7 +282,7 @@ endif()
 
 if(UNIX)
     set(JSBSIM_PATCH_COMMAND
-        sed -i "s|^add_subdirectory(utils)|# add_subdirectory(utils) # disabled by ProjectAirSim|" <SOURCE_DIR>/CMakeLists.txt
+        perl -pi -e "s/^add_subdirectory\\(utils\\)/# add_subdirectory(utils) # disabled by ProjectAirSim/" <SOURCE_DIR>/CMakeLists.txt
     )
 else()
     set(JSBSIM_PATCH_COMMAND ${CMAKE_COMMAND} -E echo "No JSBSim patch needed on Windows")
@@ -463,6 +473,12 @@ if(WIN32)
 else()
     set(ASSIMP_LIBRARY_SUFFIX_OVERRIDE "")
 endif()
+# Bundled zlib 1.2.x defines fdopen to NULL and breaks macOS SDK headers.
+if(APPLE)
+    set(ASSIMP_BUILD_ZLIB_FLAG OFF)
+else()
+    set(ASSIMP_BUILD_ZLIB_FLAG ON)
+endif()
 if(PROJECTAIRSIM_USE_UE_TOOLCHAIN)
     set(ASSIMP_LINKER_FLAGS "-stdlib=libc++ -L${UE_LIBCXX_LIB_DIR} -lc++abi")
 else()
@@ -492,7 +508,7 @@ ExternalProject_Add(assimp-external
 	    -DASSIMP_WARNINGS_AS_ERRORS=OFF
         -DCMAKE_POSITION_INDEPENDENT_CODE=True
         -DBUILD_SHARED_LIBS=OFF
-        -DASSIMP_BUILD_ZLIB=ON  # force build of assimp's packaged zlib in case it detects it existing in a python environment
+        -DASSIMP_BUILD_ZLIB=${ASSIMP_BUILD_ZLIB_FLAG}
         -DASSIMP_BUILD_TESTS=OFF
         -DASSIMP_BUILD_ASSIMP_TOOLS=OFF
         ${ASSIMP_LIBRARY_SUFFIX_OVERRIDE}
@@ -640,7 +656,11 @@ if(UNIX)
         )
     endif()
 
-    set(OPENSSL_LIB_DIR ${CMAKE_BINARY_DIR}/_deps/openssl-install/lib64)
+    if(APPLE)
+        set(OPENSSL_LIB_DIR ${CMAKE_BINARY_DIR}/_deps/openssl-install/lib)
+    else()
+        set(OPENSSL_LIB_DIR ${CMAKE_BINARY_DIR}/_deps/openssl-install/lib64)
+    endif()
     set(OPENSSL_CRYPTO_LIBRARY ${OPENSSL_LIB_DIR}/libcrypto.a)
     set(OPENSSL_SSL_LIBRARY ${OPENSSL_LIB_DIR}/libssl.a)
     set(OPENSSL_INCLUDE_DIR ${CMAKE_BINARY_DIR}/_deps/openssl-install/include)
@@ -678,7 +698,11 @@ if(UNIX)
         )
     endif()
 
-    set(OPENSSL_LIB_DIR ${CMAKE_BINARY_DIR}/_deps/openssl-install/lib64)
+    if(APPLE)
+        set(OPENSSL_LIB_DIR ${CMAKE_BINARY_DIR}/_deps/openssl-install/lib)
+    else()
+        set(OPENSSL_LIB_DIR ${CMAKE_BINARY_DIR}/_deps/openssl-install/lib64)
+    endif()
     set(OPENSSL_CRYPTO_LIBRARY ${OPENSSL_LIB_DIR}/libcrypto.a)
     set(OPENSSL_SSL_LIBRARY ${OPENSSL_LIB_DIR}/libssl.a)
     set(OPENSSL_INCLUDE_DIR ${CMAKE_BINARY_DIR}/_deps/openssl-install/include)
@@ -709,10 +733,20 @@ if(UNIX)
     )
 endif()
 
-if(UNIX)
-    set(onnx_url https://github.com/microsoft/onnxruntime/releases/download/v1.12.1/onnxruntime-linux-x64-gpu-1.12.1.tgz)
-    set(onnx_hash MD5=27adfa51648d2713608f35c3c6957a4f)
+if(APPLE)
+    set(onnx_url https://github.com/microsoft/onnxruntime/releases/download/v1.12.1/onnxruntime-osx-arm64-1.12.1.tgz)
+    set(onnx_hash MD5=d093dbb884ce526b9c90a7a7e844c872)
+elseif(UNIX)
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64")
+        set(onnx_url https://github.com/microsoft/onnxruntime/releases/download/v1.12.1/onnxruntime-linux-aarch64-1.12.1.tgz)
+        set(onnx_hash MD5=455b08f02b37c538615c24eb6eee516e)
+    else()
+        set(onnx_url https://github.com/microsoft/onnxruntime/releases/download/v1.12.1/onnxruntime-linux-x64-gpu-1.12.1.tgz)
+        set(onnx_hash MD5=27adfa51648d2713608f35c3c6957a4f)
+    endif()
+endif()
 
+if(UNIX)
     message("Setting up [zlib] dependency as an external project for ONNX Runtime...")
     set(ZLIB_TOOLCHAIN_CMAKE_ARGS "")
     if(PROJECTAIRSIM_USE_UE_TOOLCHAIN)
@@ -729,7 +763,11 @@ if(UNIX)
     set(ZLIB_INSTALL_DIR ${CMAKE_BINARY_DIR}/_deps/zlib-install)
     set(ZLIB_LIB_DIR ${ZLIB_BINARY_DIR})
     set(ZLIB_INSTALL_LIB_DIR ${ZLIB_INSTALL_DIR}/lib)
-    set(ZLIB_SHARED_LIBRARY ${ZLIB_BINARY_DIR}/libz.so.1)
+    if(APPLE)
+        set(ZLIB_SHARED_LIBRARY ${ZLIB_BINARY_DIR}/libz.dylib)
+    else()
+        set(ZLIB_SHARED_LIBRARY ${ZLIB_BINARY_DIR}/libz.so.1)
+    endif()
     ExternalProject_Add(zlib-external
         GIT_REPOSITORY          https://github.com/madler/zlib.git
         GIT_TAG                 v1.3.1
@@ -782,17 +820,24 @@ if(NOT onnxruntime_POPULATED)
 
     message("Packaging [onnxruntime] to ${UE_PLUGIN_SIMLIBS_DIR}/shared_libs")
     file(COPY "${ONNX_INCLUDE_DIR}" DESTINATION "${UE_PLUGIN_SIMLIBS_DIR}/shared_libs/onnxruntime")
-    file(COPY "${ONNX_LIB_DIR}" DESTINATION "${UE_PLUGIN_SIMLIBS_DIR}/shared_libs" FILES_MATCHING PATTERN "*onn*.dll" PATTERN "*onn*.lib" PATTERN "*.so*")
+    file(COPY "${ONNX_LIB_DIR}" DESTINATION "${UE_PLUGIN_SIMLIBS_DIR}/shared_libs" FILES_MATCHING PATTERN "*onn*.dll" PATTERN "*onn*.lib" PATTERN "*.so*" PATTERN "*.dylib*")
 
     message("Packaging [onnxruntime] to ${UNITY_WRAPPER_DLL_DIR}")
-    file(COPY "${ONNX_LIB_DIR}/" DESTINATION "${UNITY_WRAPPER_DLL_DIR}/" FILES_MATCHING PATTERN "*onn*.dll" PATTERN "*onn*.lib" PATTERN "*.so*")
+    file(COPY "${ONNX_LIB_DIR}/" DESTINATION "${UNITY_WRAPPER_DLL_DIR}/" FILES_MATCHING PATTERN "*onn*.dll" PATTERN "*onn*.lib" PATTERN "*.so*" PATTERN "*.dylib*")
 
-    add_definitions(-DUSE_CUDA)
-    add_definitions(-DUSE_TENSORRT)
+    # GPU EP is x86_64-only in the pinned ONNX Runtime package.
+    if(NOT APPLE AND NOT CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64")
+        add_definitions(-DUSE_CUDA)
+        add_definitions(-DUSE_TENSORRT)
+    endif()
 endif()
 
 if(UNIX)
-    set(ONNXRUNTIME_LIBRARY "${ONNX_LIB_DIR}/libonnxruntime.so")
+    if(APPLE)
+        set(ONNXRUNTIME_LIBRARY "${ONNX_LIB_DIR}/libonnxruntime.dylib")
+    else()
+        set(ONNXRUNTIME_LIBRARY "${ONNX_LIB_DIR}/libonnxruntime.so")
+    endif()
     if(PROJECTAIRSIM_USE_UE_TOOLCHAIN)
         function(projectairsim_resolve_ue_runtime_library OUTPUT_VARIABLE LIBRARY_NAME)
             set(SEARCH_DIRECTORIES ${ARGN})
@@ -843,15 +888,26 @@ if(UNIX)
             "-Wl,--end-group"
         )
     else()
-        set(ONNXRUNTIME_CXX_RUNTIME_LIBRARIES stdc++)
+        if(APPLE)
+            set(ONNXRUNTIME_CXX_RUNTIME_LIBRARIES c++)
+        else()
+            set(ONNXRUNTIME_CXX_RUNTIME_LIBRARIES stdc++)
+        endif()
     endif()
 
     add_library(onnxruntime SHARED IMPORTED GLOBAL)
-    set_target_properties(onnxruntime PROPERTIES
-        IMPORTED_LOCATION "${ONNXRUNTIME_LIBRARY}"
-        INTERFACE_LINK_LIBRARIES "${ZLIB_SHARED_LIBRARY};${ONNXRUNTIME_CXX_RUNTIME_LIBRARIES};dl;rt;pthread"
-        INTERFACE_LINK_OPTIONS "-Wl,-rpath-link,${ZLIB_LIB_DIR}"
-    )
+    if(APPLE)
+        set_target_properties(onnxruntime PROPERTIES
+            IMPORTED_LOCATION "${ONNXRUNTIME_LIBRARY}"
+            INTERFACE_LINK_LIBRARIES "${ZLIB_SHARED_LIBRARY};${ONNXRUNTIME_CXX_RUNTIME_LIBRARIES};pthread"
+        )
+    else()
+        set_target_properties(onnxruntime PROPERTIES
+            IMPORTED_LOCATION "${ONNXRUNTIME_LIBRARY}"
+            INTERFACE_LINK_LIBRARIES "${ZLIB_SHARED_LIBRARY};${ONNXRUNTIME_CXX_RUNTIME_LIBRARIES};dl;rt;pthread"
+            INTERFACE_LINK_OPTIONS "-Wl,-rpath-link,${ZLIB_LIB_DIR}"
+        )
+    endif()
 endif()
 
 # if(WIN32)
