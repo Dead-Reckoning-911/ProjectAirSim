@@ -435,7 +435,13 @@
         "lock-yaw": false
       },
       "origin": {
-        "xyz": "0 0.0 0.0",
+        // Nose mount, like a real FPV cam. At the frame origin the 90-deg FOV
+        // looks straight through the prop disc (rotors sit at +/-0.253 m) and
+        // the operator feed is filled with the airframe's own propellers --
+        // the detector locks onto a red prop instead of a hull. 0.34 m forward
+        // clears the disc; 0.06 m down keeps the arms out of the top of frame.
+        // Pitch -11 deg is the depression to a contact 400 m out at 80 m AGL.
+        "xyz": "0.34 0.0 0.06",
         "rpy-deg": "0 -11 0"
       }
     },
