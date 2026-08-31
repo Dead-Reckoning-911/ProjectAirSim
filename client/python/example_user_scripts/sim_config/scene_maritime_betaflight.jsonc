@@ -1,8 +1,7 @@
 // Maritime intercept flown by Betaflight SITL.
-// No spawn-objects: that block forces the steppable clock to pause on load
-// and makes the first load after an Unreal start blow get_topic_info's 60 s
-// timeout. The pipeline spawns the ocean slab, Crimson Dawn and the boats at
-// runtime instead (_paint_ocean / _spawn_boat).
+// spawn-objects restored: without the OceanSlab the airframe falls past the
+// deck onto Blocks terrain and wedges in the geometry. The load timeout this
+// was removed for turned out to be host memory pressure, not the scene.
 {
   "id": "SceneMaritimeBetaflight",
   "actors": [
@@ -32,5 +31,29 @@
     "ignore-existing": false,
     "use-owner-name": true
   },
-  "scene-type": "UnrealNative"
+  "scene-type": "UnrealNative",
+  "spawn-objects": {
+    "sim-packaged": [
+      {
+        "name": "OceanSlab",
+        "asset-path": "1M_Cube",
+        "scale": "2500 2500 2",
+        "physics-enabled": false,
+        "origin": {
+          "xyz": "0 0 -51.0",
+          "rpy-deg": "0 0 0"
+        }
+      },
+      {
+        "name": "CrimsonDawn",
+        "asset-path": "BasicLandingPad",
+        "scale": "14 28 1.2",
+        "physics-enabled": false,
+        "origin": {
+          "xyz": "0 0 -51.2",
+          "rpy-deg": "0 0 0"
+        }
+      }
+    ]
+  }
 }
