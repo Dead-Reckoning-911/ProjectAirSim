@@ -205,16 +205,12 @@
   // bridge rather than depending on this order.
   "controller": {
     "id": "Betaflight_Bridge",
-    // matlab-controller-api is a generic external-controller bridge despite the
-    // name: it runs INSIDE the physics step and blocks on an NNG socket, so the
-    // loop closes at the sim step rate instead of the ~4 Hz a client-side RPC
-    // round-trip allows. Betaflight needs 50 Hz minimum.
-    "type": "matlab-controller-api",
-    "matlab-controller-api-settings": {
-      "control-connection": {
-        "ip": "127.0.0.1",
-        "port": 8998
-      },
+    // NOTE: matlab-controller-api was tried here for its in-physics-step NNG
+    // seam (~45 Hz vs ~4 Hz through the client). The sim never completes robot
+    // setup with it -- scene load hangs at "Pausing sim clock on start" and the
+    // controller never connects to the listening socket -- so it is parked.
+    "type": "manual-controller-api",
+    "manual-controller-api-settings": {
       "actuator-order": [
         {
           "id": "Prop_FR_actuator",
