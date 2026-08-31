@@ -14,12 +14,13 @@
       // estimator has settled, and it fights the resulting attitude error with
       // saturated asymmetric motors instead of taking off.
       "origin": {
-        "xyz": "0.0 0.0 -52.0",
+        "xyz": "0.0 0.0 -54.0",
         "rpy-deg": "0 0 0"
       },
-      // No start-landed: it pins the airframe, so Betaflight commands all four
-      // rotors to 0.76 and the craft never leaves the deck. Spawning 0.2 m over
-      // the pad lets it settle instead.
+      // 2 m clear of the OceanSlab, whose top surface is z=-52.0. Spawning at
+      // -52.0 puts the airframe inside the slab and the scene never finishes
+      // loading. No start-landed either: it pins the craft, so Betaflight
+      // commands all four rotors to 0.76 and it never leaves the deck.
       "robot-config": "robot_quadrotor_betaflight.jsonc"
     }
   ],
