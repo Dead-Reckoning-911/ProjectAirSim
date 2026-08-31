@@ -348,6 +348,9 @@
       "capture-settings": [
         {
           "image-type": 0,  // scene camera
+          // Keep this modest: the camera stream shares the (non-thread-safe)
+          // sim RPC path with kinematics and set_control_signals, and 1280x720
+          // starved it -- motors stopped reaching the rotors entirely.
           "width": 640,
           "height": 360,
           "fov-degrees": 90,

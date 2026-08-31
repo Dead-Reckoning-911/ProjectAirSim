@@ -9,10 +9,17 @@
     {
       "type": "robot",
       "name": "Drone1",
+      // Sit on the Crimson Dawn deck (pad top is z=-51.8), not 39 m above it.
+      // Spawning airborne makes the craft fall onto the deck before Betaflight's
+      // estimator has settled, and it fights the resulting attitude error with
+      // saturated asymmetric motors instead of taking off.
       "origin": {
-        "xyz": "0.0 0.0 -90.0",
+        "xyz": "0.0 0.0 -52.0",
         "rpy-deg": "0 0 0"
       },
+      // No start-landed: it pins the airframe, so Betaflight commands all four
+      // rotors to 0.76 and the craft never leaves the deck. Spawning 0.2 m over
+      // the pad lets it settle instead.
       "robot-config": "robot_quadrotor_betaflight.jsonc"
     }
   ],
