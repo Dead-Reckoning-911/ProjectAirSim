@@ -205,8 +205,16 @@
   // bridge rather than depending on this order.
   "controller": {
     "id": "Betaflight_Bridge",
-    "type": "manual-controller-api",
-    "manual-controller-api-settings": {
+    // matlab-controller-api is a generic external-controller bridge despite the
+    // name: it runs INSIDE the physics step and blocks on an NNG socket, so the
+    // loop closes at the sim step rate instead of the ~4 Hz a client-side RPC
+    // round-trip allows. Betaflight needs 50 Hz minimum.
+    "type": "matlab-controller-api",
+    "matlab-controller-api-settings": {
+      "control-connection": {
+        "ip": "127.0.0.1",
+        "port": 8998
+      },
       "actuator-order": [
         {
           "id": "Prop_FR_actuator",
