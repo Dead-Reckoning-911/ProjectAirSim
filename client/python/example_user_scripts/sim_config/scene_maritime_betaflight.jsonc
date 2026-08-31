@@ -1,0 +1,60 @@
+{
+  // Maritime intercept on Blocks. UnrealNative still loads BlocksMap, whose
+  // city sits at NED z≈0 and sticks tens of metres up. The intercept lives on
+  // a deck at z≈-50 so the camera sees ocean, not TemplateCubes.
+  // Spawn WaterPlane during paused scene load — runtime spawn after resume
+  // resets the Unreal sim client.
+  "id": "SceneMaritimeBetaflight",
+  "actors": [
+    {
+      "type": "robot",
+      "name": "Drone1",
+      "origin": {
+        "xyz": "0.0 0.0 -90.0",
+        "rpy-deg": "0 0 0"
+      },
+      "robot-config": "robot_quadrotor_betaflight.jsonc"
+    }
+  ],
+  "spawn-objects": {
+    "sim-packaged": [
+      {
+        "name": "OceanSlab",
+        "asset-path": "1M_Cube",
+        "scale": "2500 2500 2",
+        "physics-enabled": false,
+        "origin": {
+          "xyz": "0 0 -51.0",
+          "rpy-deg": "0 0 0"
+        }
+      },
+      {
+        "name": "CrimsonDawn",
+        "asset-path": "BasicLandingPad",
+        "scale": "14 28 1.2",
+        "physics-enabled": false,
+        "origin": {
+          "xyz": "0 0 -51.2",
+          "rpy-deg": "0 0 0"
+        }
+      }
+    ]
+  },
+  "clock": {
+    "type": "steppable",
+    "step-ns": 3000000,
+    "real-time-update-rate": 3000000,
+    "pause-on-start": false
+  },
+  "home-geo-point": {
+    "latitude": 47.641468,
+    "longitude": -122.140165,
+    "altitude": 122.0
+  },
+  "segmentation": {
+    "initialize-ids": true,
+    "ignore-existing": false,
+    "use-owner-name": true
+  },
+  "scene-type": "UnrealNative"
+}
