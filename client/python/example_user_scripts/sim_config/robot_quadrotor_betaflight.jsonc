@@ -205,12 +205,12 @@
   // bridge rather than depending on this order.
   "controller": {
     "id": "Betaflight_Bridge",
-    // NOTE: matlab-controller-api was tried here for its in-physics-step NNG
-    // seam (~45 Hz vs ~4 Hz through the client). The sim never completes robot
-    // setup with it -- scene load hangs at "Pausing sim clock on start" and the
-    // controller never connects to the listening socket -- so it is parked.
-    "type": "manual-controller-api",
-    "manual-controller-api-settings": {
+    // In-physics-step NNG seam. The hang at scene load was this block missing
+    // matlab-controller-api-settings.control-connection: LoadSettings then
+    // defaulted control-connection to a JSON array and nng_dial looped forever.
+    // The Python InLoopBridge must be listening on 127.0.0.1:8998 BEFORE World().
+    "type": "matlab-controller-api",
+    "matlab-controller-api-settings": {
       "actuator-order": [
         {
           "id": "Prop_FR_actuator",
@@ -228,7 +228,11 @@
           "id": "Prop_RR_actuator",
           "initial-value": 0.0
         }
-      ]
+      ],
+      "control-connection": {
+        "ip": "127.0.0.1",
+        "port": 8998
+      }
     }
   },
   "actuators": [
@@ -353,8 +357,8 @@
         {
           "image-type": 0,  // scene camera
           // Keep this modest: the camera stream shares the (non-thread-safe)
-          // sim RPC path with kinematics and set_control_signals, and 1280x720
-          // starved it -- motors stopped reaching the rotors entirely.
+          // sim RPC path with kinematics and set_control_signals, and raising it
+          // (960x540 and 1280x720 both tried) starves the scene load.
           "width": 640,
           "height": 360,
           "fov-degrees": 90,
